@@ -1,5 +1,5 @@
 ---
-title: "Exercise 1 - Data Mining"
+title: "ECO 395 Exercises 1: Larisa Barreto, David Fraire, Kylie Taylor"
 author: "Kylie Taylor"
 date: "1/28/2019"
 output: pdf_document
