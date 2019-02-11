@@ -1,0 +1,217 @@
+---
+title: "Exercise 1 - Data Mining"
+author: "Kylie Taylor"
+date: "1/28/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(rstanarm)
+library(bsts)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(lme4)
+library(stargazer)
+library(pander)
+library(forcats)
+library(foreign)
+library(tidyr)
+library(stringr)
+library(lubridate)
+library(ggvis)
+library(googleVis)
+library(car)
+library(mgcv)
+library(randomForest)
+library(caret)
+library(multcomp)
+library(vcd)
+library(glmnet)
+library(survival)
+library(xtable)
+library(ggmap)
+library(zoo)
+library(xts)
+library(quantmod)
+library(ggraph)
+library(tidygraph)
+library(packcircles)
+library(viridis)
+library(igraph)
+library(data.tree)
+library(gapminder)
+library(plotly)
+```
+
+
+##Data Visualization 1: Green Buildings##
+
+```{r, include=FALSE}
+GB <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/greenbuildings.csv", header=TRUE)
+write.csv(GB, file="GreenBuilding.csv")
+
+airport <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/ABIA.csv", header=TRUE)
+write.csv(airport, file="AustinAirport.csv")
+
+sclass <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/sclass.csv", header = TRUE)
+write.csv(sclass, file="Sclass.csv")
+```
+
+The investor is intersted in the return of investment on a new "certified-green building" in Austin, TX. There are inherently many questions that must be answered in order to make a decision on whether to develop or not. In this analysis, I will not be preforming any predictive models through the use of regression. What I will be doing is conducting an analysis based on visualzations of the data at hand.
+
+The data is sourced from a dataset titled "Green Buildings" constructed by real-estate economists, observing 1,360 green-certified buildings throughout the United States. Building characteristics were only available for 685 green buildings. For comparison purposes, the 685 green buildings were clustered with 12 non-green buildings within a quarter-mile radius of the certified green building, using data sourced from the CoStar database. The merged datasets consist of a total of 7,894 observations spanning the entire United States (685 clusters of approximately 12 buildings). 
+
+In order to become a certified-green building, a commercial property must fit within specific environmental criteria and is certified by an outside engineer. Some of the criteria a green building must satisfy are energy efficiency, carbon footprint, site selection, and sustainable building materials. Green buildings can be awarded either LEED or EnergyStar certifications.
+
+There are 21 variables in the dataset. A summary of these variables follows:
+
+  1. *CS.PropertyID*: the building's unique identifier in the CoStar database.
+  2. *cluster*: an identifier for the building cluster
+  3. *size*: the total square footage of available rental space in the building.
+  4. *empl.gr*: the year-on-year growth rate in employment in the building's geographic region.
+  5. *Rent*: the rent charged to tenants in the building, in dollars per square foot per calendar year.
+  6. *leasing.rate*: a measure of occupancy; the fraction of the building's available space currently under lease.
+  7. *stories*: the height of the building in stories.
+  8. *age*: the age of the building in years.
+  9. *renovated*: whether the building has undergone substantial renovations during its lifetime.
+  10. *class.a, class.b*: These are relative classifications within a specific market. Class A buildings are the highest-quality properties. Class B buildings are a notch down. Class C buildings are the least desirable properties.
+  11. *green.rating*: an indicator for whether the building is either LEED- or EnergyStar-certified.
+  12. *LEED, Energystar*: indicators for the two specific kinds of green certifications.
+  13. *net*: an indicator as to whether the rent is quoted on a "net contract"" basis.
+  14. *amenities*: an indicator of whether at least one of the following amenities is available on-site: bank, convenience store, dry cleaner, restaurant, retail shops, fitness center.
+  15. *cd.total.07*: number of cooling degree days in the building's region in 2007. 
+  16. *hd.total07*: number of heating degree days in the building's region in 2007. 
+  17. *total.dd.07*: the total number of degree days (either heating or cooling) in the building's region in 2007.
+  18. *Precipitation*: annual precipitation in inches in the building's geographic region.
+  19. *Gas.Costs*: a measure of how much natural gas costs in the building's geographic region.
+  20. *Electricity.Costs*: a measure of how much electricity costs in the building's geographic region.
+  21. *cluster.rent*: a measure of average rent per square-foot per calendar year in the building's local market.
+
+
+The first visualization I will make is a table of summary statisitcs for relevant variables
+
+```{r, echo=FALSE}
+df1 <- data.frame(GB$size, GB$empl_gr, GB$Rent, GB$leasing_rate, GB$stories, GB$age, GB$cd_total_07, GB$hd_total07, GB$total_dd_07, GB$Precipitation, GB$Gas_Costs, GB$Electricity_Costs, GB$cluster_rent)
+pander::pander(summary(df1))
+```
+
+By inspection of the summary statistics, the numerical variables appear to behave well and do not send any alarming signals that there is an error. I have made the assumption that all missing values and non-sensible observations were dealt with during the data cleaning process, since this is not the raw data.
+
+The first mistake the "data guru" made when considering his analysis was dropping observations from buildings that have an occupancy rate less than 10%. After calculating that only 215 buildings of the 7.894 buildings in the data set have low occupancy rates, we conclude that it is neccessary or adivsed to drop these buildings from the analysis for two reasons. Their existence in the analysis is likely to have very little effect on our outcomes, and there is likely valid reasons for low occupancy, like renovations, over-priced rent, or other specific factors.
+
+
+```{r, echo=FALSE}
+low.ocp <- which(GB$leasing_rate < 10)
+length(low.ocp)
+```
+
+
+The next statistic the "excel-guru" looked at was the median market rent grouped by green and non-green buildings. 
+crucial to look at the variance, since variance will tell us more about potential revenue garaunteed. must measure rent clustered by region.
+
+The median rent we calculated that includes outliers in the data was the same as the excel guru's calculation. 
+
+The variance of the median for non-green buildings was 232.7 with a standard deviation of 15.25. When we take into account the variances of the green and non-green buildings we are able to see the differences between possible profitability for each type of building. This allows us to estimate a more complete picture of the ranges of possible rent prices for a non-green building. 
+
+The variance of the median for green buildings was 167.7 with a standard deviation of 12.95.
+
+
+
+```{r, echo=FALSE}
+GB$green <- as.factor(GB$green_rating)
+summary(GB$green)
+
+a <- GB %>% group_by(green) %>% summarise(med.rent = median(Rent))
+summary(a)
+
+GB.green <-  which(GB$green_rating == 1)
+GB.nongreen <-  which(GB$green_rating == 0)
+
+
+aggdata <-stats::aggregate(Rent ~ green_rating, data = GB,  median)
+pander(aggdata)
+
+v <-stats::aggregate(Rent ~ green_rating, data = GB,  var)
+pander(v)
+
+
+
+```
+
+
+```{r, echo=FALSE}
+g <- ggplot(GB, mapping = aes(Rent, col = green_rating)) + scale_fill_brewer(palette = "Spectral")
+g + geom_density(aes(fill=factor(green_rating)),  binwidth = 10, col="black", size=.4) +  # change binwidth
+  labs(title="Histogram of Rents charged", 
+       subtitle="Rent for Green vs Nongreen buildings")
+
+
+```
+The next step in our analysis was to show the median rent by the "cluster" variable because rents will be largely affected by the area the building is located. The "excel guru" did not control for rents in different clusters. We have decided to normalize our median rents by region, or cluster, in order to have a more precise understanding of the differences between potential green and non green rent prices we can charge. 
+```{r, echo = FALSE}
+g <- ggplot(GB, mapping = aes(Rent, col = green_rating)) + scale_fill_brewer(palette = "Spectral")
+g + geom_density(aes(fill=factor(green_rating)),  binwidth = 10, col="black", size=.4) +  # change binwidth
+  labs(title="Histogram of Rents charged", 
+       subtitle="Rent for Green vs Nongreen buildings")
+
+
+
+
+avgRent = GB %>%
+  group_by(green) %>% 
+  summarize(avgRent=mean(Rent))
+
+avgRent
+ggplot(GB, aes(avgRent))+
+  geom_point(aes(cluster,avgRent))+
+  labs(title="IDK yet")+
+  facet_wrap(~green_rating, nrow=2) 
+
+
+
+## Cluster(x) and avgRent
+avgRent_G <- mean(GB) 
+avgRent_NG <-   
+  
+ggplot(GB, aes(cluster))+
+  geom_point(aes(cluster,avgRent))+
+  labs(title="IDK yet")+
+  facet_wrap(~green_rating, nrow=2) 
+  ylim(c(0,100))
+```
+
+##Data Visualization 2: Flights at ABIA##
+
+
+
+##Regression vs. KNN##
+
+
+
+```{r, echo = FALSE}
+sclass350 = subset(sclass, trim == '350')
+dim(sclass350)
+
+sclass65AMG = subset(sclass, trim == '65 AMG')
+summary(sclass65AMG)
+
+plot(price ~ mileage, data = sclass350)
+plot(price ~ mileage, data = sclass65AMG)
+```
+
+
+
+
+For each of these two trim levels:
+
+Split the data into a training and a testing set.
+Run K-nearest-neighbors, for many different values of K, starting at K=2 and going as high as you need to. For each value of K, fit the model to the training set and make predictions on your test set.
+Calculate the out-of-sample root mean-squared error (RMSE) for each value of K.
+For each trim, make a plot of RMSE versus K, so that we can see where it bottoms out. Then for the optimal value of K, show a plot of the fitted model. (Again, separately for each of the two trim levels.)
+
+Which trim yields a larger optimal value of K? Why do you think this is?
+
+
+
+
