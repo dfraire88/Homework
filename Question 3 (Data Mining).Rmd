@@ -83,19 +83,25 @@ which(ON$Category_num==0)
 
 library(ggthemes)
 ggplot(ON, aes(x=weekday))+
-  geom_bar(aes(fill=factor(weekday)))+
-  labs(title="Shares per day",
+  geom_bar(aes(fill=factor(Category)))+
+  labs(title="# of Articles published per day",
        x="Weekday",
-       y="Number of Shares")
-
-ggplot(ON, aes(x=weekday, y=))+
-  geom_boxplot(aes(fill=weekday))+
+       y="Number of Articles")+
   facet_wrap(~viral,nrow=2)
 
 
-## CATEGORY PLOTS
 ggplot(ON, aes(x=Category, y=average_token_length))+
   geom_boxplot(aes(fill=factor(weekday)))
+
+ggplot(ON, aes(x=Category, y=shares))+
+  geom_boxplot(aes(fill=weekday))+
+  ylim(0, 1750) # This graph shows us that for each category, articles published on Saturday have the highest shares. Maybe
+
+
+
+## CATEGORY PLOTS
+ggplot(ON, aes(x=Category, y=n_tokens_content))+
+  geom_boxplot(aes(fill=factor(weekday))) #### I left off here
 
 ggplot(ON, aes(x=Category, y=average_token_length))+
   geom_boxplot(aes(fill=Category))+
