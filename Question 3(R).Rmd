@@ -1,0 +1,187 @@
+---
+title: "Question 3"
+author: "David Fraire"
+date: "3/12/2019"
+output: html_document
+---
+
+```{r, echo=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(readr)
+library(FNN)
+library(tidyverse)
+library(datasets)
+library(dbplyr)
+library(dplyr)
+library(ggformula)
+library(ggplot2)
+library(ggstance)
+library(graphics)
+library(grDevices)
+library(lattice)
+library(markdown)
+library(Matrix)
+library(methods)
+library(mosaic)
+library(mosaicData)
+library(pander)
+library(RColorBrewer)
+##library(reader)
+library(rmarkdown)
+library(stringr)
+library(tidyr)
+library(tidyverse)
+library(utils)
+onlinenews <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/online_news.csv")
+onlinenews$viral <- as.numeric(onlinenews$shares >= 1400)
+colnames(onlinenews)
+ON <- na.omit(onlinenews)
+ON$viral <- as.numeric(ON$shares >= 1400)
+view(ON)
+head(ON$viral)
+## Day of the Week split
+ON$Monday <- ifelse(ON$weekday_is_monday== 1,1,0)
+ON$Tuesday <- ifelse(ON$weekday_is_tuesday == 1, 2, 0)
+ON$Wednesday <- ifelse(ON$weekday_is_wednesday == 1, 3, 0)
+ON$Thursday <- ifelse(ON$weekday_is_thursday == 1, 4, 0)
+ON$Friday <- ifelse(ON$weekday_is_friday == 1, 5, 0)
+ON$Saturday <- ifelse(ON$weekday_is_saturday == 1, 6, 0)
+ON$Sunday <- ifelse(ON$weekday_is_sunday == 1, 7, 0)
+ON$weekday_num = ON$Monday + ON$Tuesday + ON$Wednesday + ON$Thursday + ON$Friday + ON$Saturday + ON$Sunday
+ON$weekday = factor(ON$weekday_num, levels=1:7, 
+                    labels=c("Monday","Tuesday","Wednesday", "Thursday","Friday", "Saturday", "Sunday"))
+View(ON)
+
+
+
+ON$Entertainment <- ifelse(ON$data_channel_is_entertainment== 1,1,0)
+ON$Social <- ifelse(ON$data_channel_is_socmed == 1, 2, 0)
+ON$World <- ifelse(ON$data_channel_is_world == 1, 3, 0)
+ON$Lifestyle <- ifelse(ON$data_channel_is_lifestyle == 1, 4, 0)
+ON$Business <- ifelse(ON$data_channel_is_bus == 1, 5, 0)
+ON$Tech <- ifelse(ON$data_channel_is_tech == 1, 6, 0)
+ON$Category_num = ON$Entertainment + ON$Social + ON$World + ON$Lifestyle + ON$Business + ON$Tech
+ON$Category = factor(ON$Category_num, levels=0:6, 
+                    labels=c("Misc","Entertainment","Social","World", "Lifestyle","Business", "Tech" ))
+  
+View(ON)
+
+install.packages(ggthemes)
+library(ggthemes)
+
+ggplot(ON, aes(x=weekday))+
+  geom_bar(aes(fill=factor(Category)))+
+  labs(title="# of Articles published per day",
+       x="Weekday",
+       y="Number of Articles")+
+  facet_wrap(~viral,nrow=2)
+
+
+ggplot(ON, aes(x=Category, y=average_token_length))+
+  geom_boxplot(aes(fill=factor(weekday)))
+
+
+ggplot(ON, aes(x=Category, y=shares))+
+  geom_boxplot(aes(fill=weekday))+
+  ylim(0, 2000)
+
+
+# This graph shows us that for each category, articles published on Saturday have the highest shares. Maybe
+## CATEGORY PLOTS
+ggplot(ON, aes(x=Category, y=n_tokens_content))+
+  geom_boxplot(aes(fill=factor(weekday)))+
+  ylim(0,1000)#### Longer titles get more views on Sat/Sunday (same conclusion as the other graph)
+
+
+ggplot(ON, aes(x=Category, y=n_tokens_title))+
+  geom_boxplot(aes(fill=factor(weekday)))
+
+
+ggplot(ON, aes(x=Category, y=average_token_length))+
+  geom_boxplot(aes(fill=Category))+
+  facet_wrap(~viral,nrow=2)  ### Not enough variance
+
+
+ggplot(ON, aes(x=Category))+
+  geom_bar(aes(fill=factor(Category))) ## Number of articles per category
+  labs(title="Shares per day",
+       x="Weekday",
+       y="Number of Shares")
+## Violin PLot of Shares per type of Article Category
+ggplot(ON, aes(x=Category, y=num_imgs))+
+  geom_violin(aes(fill=Category))+
+  labs(title="Avg Negative Polarity per Article Category")+
+  ylim(0,10)
+  
+##Violin Plot of .....
+ggplot(ON, aes(n_tokens_title))+
+  geom_bar(aes(fill=factor(Category)), alpha=0.89) +
+  xlim(0,20)
+##Density Plot of Category
+ggplot(ON, aes(shares))+
+  geom_density(aes(fill=factor(Category)), alpha=0.5) +
+  xlim(0,16000)
+
+
+# Testing Linear model on full dataset
+lm1 = lm(shares ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=onlinenews)
+lm2 = lm(shares ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=onlinenews)
+lm3 = lm(shares ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=onlinenews)
+
+## TRAIN/TEST
+
+n = nrow(onlinenews)
+n_train = round(0.8*n)  # round to nearest integer
+n_test = n - n_train
+train_cases = sample.int(n, n_train, replace=FALSE)
+test_cases = setdiff(1:n, train_cases)
+news_train = onlinenews[train_cases,]
+news_test = onlinenews[test_cases,]
+	
+
+colnames(news_train)
+# Fit to the training data
+lm1train = lm(shares ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=news_train)
+lm2train = lm(shares ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
+lm3train = lm(shares ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=news_train)
+
+# Predictions out of sample
+yhat_test1 = predict(lm1train, news_test)
+yhat_test2 = predict(lm2train, news_test)
+yhat_test3 = predict(lm3train, news_test)
+
+rmse = function(y, yhat) {
+  sqrt( mean( (y - yhat)^2 ) )
+}
+
+# Root mean-squared prediction error
+rmse(news_test$shares, yhat_test1)
+rmse(news_test$shares, yhat_test2)
+rmse(news_test$shares, yhat_test3)
+
+
+
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
