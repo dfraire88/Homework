@@ -123,46 +123,46 @@ ggplot(ON, aes(n_tokens_title))+
 ggplot(ON, aes(shares))+
   geom_density(aes(fill=factor(Category)), alpha=0.5) +
   xlim(0,16000)
+```
 
 
+```{r}
 # Testing Linear model on full dataset
 lm1 = lm(shares ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=onlinenews)
 lm2 = lm(shares ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=onlinenews)
 lm3 = lm(shares ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=onlinenews)
 
-## TRAIN/TEST
-
-n = nrow(onlinenews)
-n_train = round(0.8*n)  # round to nearest integer
-n_test = n - n_train
-train_cases = sample.int(n, n_train, replace=FALSE)
-test_cases = setdiff(1:n, train_cases)
-news_train = onlinenews[train_cases,]
-news_test = onlinenews[test_cases,]
-	
-
-colnames(news_train)
-# Fit to the training data
-lm1train = lm(shares ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=news_train)
-lm2train = lm(shares ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
-lm3train = lm(shares ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=news_train)
-
-# Predictions out of sample
-yhat_test1 = predict(lm1train, news_test)
-yhat_test2 = predict(lm2train, news_test)
-yhat_test3 = predict(lm3train, news_test)
 
 rmse = function(y, yhat) {
   sqrt( mean( (y - yhat)^2 ) )
 }
 
+library(mosaic)
+## TRAIN/TEST
+rmsevals <- do(500)*{
+  n = nrow(onlinenews)
+  n_train = round(0.7*n)  # round to nearest integer
+  n_test = n - n_train
+  train_cases = sample.int(n, n_train, replace=FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  news_train = onlinenews[train_cases,]
+  news_test = onlinenews[test_cases,]
+	
+# Fit to the training data
+  lm1train = lm(shares ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=news_train)
+  lm2train = lm(shares ~ num_hrefs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
+  lm3train = lm(shares ~ n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend, data=news_train)
+
+# Predictions out of sample
+  yhat_test1 = predict(lm1train, news_test)
+  yhat_test2 = predict(lm2train, news_test)
+  yhat_test3 = predict(lm3train, news_test)
+
 # Root mean-squared prediction error
-rmse(news_test$shares, yhat_test1)
-rmse(news_test$shares, yhat_test2)
-rmse(news_test$shares, yhat_test3)
+  c(rmse(news_test$shares, yhat_test1), rmse(news_test$shares, yhat_test2),rmse(news_test$shares, yhat_test3))
+}
 
-
-
+colMeans(rmsevals)
 
 ```
 
