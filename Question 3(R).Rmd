@@ -69,7 +69,7 @@ ON$Category = factor(ON$Category_num, levels=0:6,
 View(ON)
 
 install.packages(ggthemes)
-library(ggthemes)
+
 
 ggplot(ON, aes(x=weekday))+
   geom_bar(aes(fill=factor(Category)))+
@@ -117,12 +117,15 @@ ggplot(ON, aes(x=Category, y=num_imgs))+
   
 ##Violin Plot of .....
 ggplot(ON, aes(n_tokens_title))+
-  geom_bar(aes(fill=factor(Category)), alpha=0.89) +
+  geom_bar(aes(fill=factor(Category)), alpha=0.9) +
   xlim(0,20)
 ##Density Plot of Category
 ggplot(ON, aes(shares))+
   geom_density(aes(fill=factor(Category)), alpha=0.5) +
   xlim(0,16000)
+
+
+
 ```
 
 
@@ -150,7 +153,9 @@ rmsevals <- do(500)*{
 	
 # Fit to the training data
   lm1train = lm(shares ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=news_train)
+  
   lm2train = lm(shares ~ num_hrefs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
+  
   lm3train = lm(shares ~ n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend, data=news_train)
 
 # Predictions out of sample
@@ -162,6 +167,9 @@ rmsevals <- do(500)*{
   c(rmse(news_test$shares, yhat_test1), rmse(news_test$shares, yhat_test2),rmse(news_test$shares, yhat_test3))
 }
 
+
+confusion_matrix = table(news_test, yhat_test1)
+confusion_matrix
 colMeans(rmsevals)
 
 ```
@@ -173,7 +181,39 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+library(mosaic)
+library(mosaicData)
+data(SaratogaHouses)
+library(readr)
+library(FNN)
+library(tidyverse)
+library(dplyr)
+
+I1 <- SaratogaHouses$bedrooms*SaratogaHouses$bathrooms
+
+
+SH <- data.frame(cbind(SaratogaHouses, I1))
+n = nrow(SH)
+n_train = round(0.8*n) # round to nearest integer
+n_test = n - n_train
+train_cases = sample.int(n, n_train, replace=FALSE)
+test_cases = setdiff(1:n, train_cases)
+SH_train = SH[train_cases,]
+SH_test = SH[test_cases,]
+
+x_train = select(SH_train, c(-fireplaces, -sewer, -landValue))
+y_train = select(SH_train, price)
+
+x_test = select(SH_test, c(-fireplaces, -sewer, -landValue))
+y_test = select(SH_test, price)
+
+knn3 = knn.reg(train=x_train, test = x_test, y = y_train, k=3)
+ypred_knn3 = knn3$pred
+
+rmse = function(y, yhat) {sqrt(mean((y - yhat)^2))}
+
+
+
 ```
 
 ## Including Plots
