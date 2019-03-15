@@ -4,7 +4,14 @@ author: "David Fraire"
 date: "3/12/2019"
 output: html_document
 ---
-# Data Import and Visualizations
+# Mashable Audit
+The dataset used in the analysis describes ~39,640 observations of articles published on Mashable.com's website. In the original dataset there are 37 predictor variables that describe each article. 
+
+To begin building our linear model, we decided to plot the data points in various visualizations to find any striking relationships across the data. We transformed the initial dataset by generating dummy variables indicating the specific category of article into a single categorical variable column. We repeated this same transformation to indicate the day of the week each article was published.  
+
+After performing a simple count statistics, we learned that our dataset contained mostly articles that were published on Wednesday and that were classified under the general category of World, followed by Technology. Given this information, we decided to create a boxplot visualization to explore the relationship between the number of shares across the days of the week for each particular type of category. Across each category, by week, the highest number of shares was on the weekend (Saturday and Sunday). We then explored the number of raw shares across each category and found that articles in the dataset that were categorized as Social Media tended to have higher numbers of shares. The next categories that tended to demonstrate higher number of shares were Lifestyle and Tech articles. 
+
+
 ```{r, echo=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -69,74 +76,19 @@ ON$Category = factor(ON$Category_num, levels=0:6,
 View(ON)
 
 ## PLOTS
-ggplot(ON, aes(x=weekday))+
-  geom_bar(aes(fill=factor(Category)))+
-  labs(title="# of Articles published per day",
-       x="Weekday",
-       y="Number of Articles")+
-  facet_wrap(~viral,nrow=2)
-
-
-ggplot(ON, aes(x=Category, y=average_token_length))+
-  geom_boxplot(aes(fill=weekday))
-
-
-ggplot(ON, aes(x=Category, y=shares))+
-  geom_boxplot(aes(fill=weekday))+
+ggplot(ON, aes(x=weekday, y=shares))+
+  geom_boxplot(aes(fill=Category))+
   ylim(0,2000)
-  # Number of shares seems to be higher on Saturday/Sunday, gives us indication to add is_weekday to model
-ggplot(ON, aes(weekday))+
-  geom_bar(aes(fill=Category))+
-  facet_wrap(~viral,nrow=2)## Count of articles published by each day
-ggplot(ON, aes(weekday))+
-  geom_bar(aes(fill=Category))
+  # Number of shares seems to be higher on Saturday/Sunday, gives us indication to add weekday
 
-
-count(ON$weekday_is_monday==1)
-count(ON$weekday_is_tuesday==1)
-count(ON$weekday_is_wednesday==1)
-count(ON$weekday_is_thursday==1)
-count(ON$weekday_is_friday==1)
-count(ON$weekday_is_saturday==1)
-count(ON$weekday_is_sunday==1)
+ggplot(ON, aes(weekday))+
+  geom_bar(aes(fill=Category)) ## Count of articles per day
 
 ggplot(ON, aes(Category))+
   geom_bar(aes(fill=Category))+
   labs(title="# of Articles published per Category",
        x="",
        y="Number of Articles")
-  
-count(ON$Category=="Misc")
-count(ON$Category=="Entertainment")
-count(ON$Category=="Social")
-count(ON$Category=="World")
-count(ON$Category=="Lifestyle")
-count(ON$Category=="Business")
-count(ON$Category=="Tech")
-
-
-
-# This graph shows us that for each category, articles published on Saturday have the highest shares. Maybe
-## CATEGORY PLOTS
-ggplot(ON, aes(x=Category, y=n_tokens_content))+
-  geom_boxplot(aes(fill=factor(weekday)))+
-  ylim(0,1000)#### Longer titles get more views on Sat/Sunday (same conclusion as the graph above)
-
-
-ggplot(ON, aes(x=weekday, y=n_tokens_title))+
-  geom_boxplot(aes(fill=factor(Category)))+
-  facet_wrap(~viral , nrow=2)## Over the course of the week, the number of letters in a title per category are not very different. This is inconclusive. 
-
-ggplot(ON, aes(x=Category, y=n_tokens_content))+
-  geom_boxplot(aes(fill=Category))+
-  ylim(0,4000)+
-  facet_wrap(~viral,nrow=2) ## Not Enough Variance
-
-
-ggplot(ON, aes(x=Category))+
-  geom_bar(aes(fill=factor(Category)))+ 
-  labs(title="Count of articles per category",
-       y="Number of Articles") ## Number of articles per category
 
 ## Violin Plot of Shares per type of Article Category
 ggplot(ON, aes(x=Category, y=shares))+
@@ -146,30 +98,15 @@ ggplot(ON, aes(x=Category, y=shares))+
        x="")+
   ylim(0,6000) ## This tells us that social media tends to have the higher number of shares out of all the categories
   
-## Bar plot of each category and 
-ggplot(ON, aes(n_tokens_title))+
-  geom_bar(aes(fill=factor(Category)), alpha=0.4) +
-  xlim(0,20)
-##Density Plot of Category
-ggplot(ON, aes(shares))+
-  geom_density(aes(fill=factor(Category)), alpha=0.7) +
-  xlim(0,16000)
+
 
 ```
 
-The dataset being used in the analysis describes ~39,640 observations of articles published on Mashable.com's website. In the original dataset there are 37 predictor variables that describe each article. 
 
-To begin building our linear model we decided to plot several box plots and visualizations to find any striking relationships across the data. We transformed the initial dataset by generating dummy variables indicating the specific category of article into a single categorical variable column. We repeated this same transformation to also indicate the day of the week each article was published.  
-
-After performing a simple count statistics, we learned that our dataset contained articles that were published mostly on Thursday and most of the articles had the general category of World, followed by Technology. Given this information, we decided to create a boxplot visualization to explore the relationship between the number of shares across the days of the week for each particular type of category. Across each category, the highest number of shares for each week was on the weekend (Saturday & Sunday). Then, we explored the number of raw shares across each category and found that articles in the dataset that were categorized as Social Media, tended to have higher shares. The next category of article that tended to demonstrate high number of shares was Lifestyle or Tech articles. 
-
-Given the visualizations, we hand built a simple linear model with a mix of different variables. Next, we tested the in and out of sample performance with a predictive success rate of ~49.3%. 
+Given the visualizations, we hand-built a simple linear model including a mix of variables that were used to predict number of shares. The variables we chose to include were the following: number of hyperlinks, whether or not the article was published on the weekend, global rate of negative words, whether the article was Business, self reference average shares, whether the article was entertainment, number of keywords, and average negative polarity. Our visualizations showed a trend of higher shares on the weekend and seems to be very significant in our model. The particular type of article is a very deterministic part of prediciting if an article will go viral as certain types of catergories have higher shares. 
 
 
-
-
-
-Our generalized linear model had a lift of xxxx% from our baseline model created by......
+Next, we tested the in-and-out-of-sample performance with a predictive success rate of ~49.5%. We then changed the outcome variable to include the threshhold variable "Viral" to represent any articles that exceeded 1400 shares, the cut off for Mashable's viral measurement.
 
 # Testing performance for all linear models w/ shares as outcome variable (lm1, lm2, and lm3)
 ```{r}
@@ -185,7 +122,7 @@ news_test = onlinenews[test_cases,]
 
 ## Fitting linear models on train
 #lm1 = lm(shares ~ average_token_length + num_imgs + num_videos + num_hrefs + weekday_is_saturday, data=news_train)
-lm2 = lm(shares ~ num_hrefs*num_imgs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
+lm2 = lm(shares ~ num_hrefs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
 #lm3 = lm(shares ~ n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend, data=news_train)
 
 #summary(lm1)
@@ -285,6 +222,11 @@ confusion_out2
 colMeans(OUT.lm)
 ```
 
+
+
+
+
+
 #Generlized Linear Model 
 ```{r}
 
@@ -293,7 +235,12 @@ glm2 = glm(viral ~ num_hrefs +is_weekend + global_rate_negative_words + data_cha
 glm3 = glm(viral ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=ON, family=binomial)
 
 stargazer::stargazer(glm1, glm2, glm3, type="text")
+
+56.92 - 49.44
+56.82 - 49.46
 ```
+
+In order to model for the binomial outcome variable "Viral", we switched to a Generalized Linear Model and tested three seperate regressions. The best performing model we created was "glm2". We proceeded to assess the performance of this model by average the results of 100 train/test splits. The results of this new model had a lift of +7.48% from our initial regression for the in-sample results and of +7.36% for the out-of-sample results. The second approach performs much better. (I am not sure why, ask Kylie???)
 
 
 # Question 3 Part II: Classification Model using GLM Binomial 
