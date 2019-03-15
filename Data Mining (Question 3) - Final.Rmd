@@ -83,7 +83,37 @@ ggplot(ON, aes(x=Category, y=average_token_length))+
 
 ggplot(ON, aes(x=Category, y=shares))+
   geom_boxplot(aes(fill=weekday))+
-  ylim(0, 2000) ## Number of shares seems to be higher on Saturday/Sunday
+  ylim(0,2000)
+  # Number of shares seems to be higher on Saturday/Sunday, gives us indication to add is_weekday to model
+ggplot(ON, aes(weekday))+
+  geom_bar(aes(fill=Category))+
+  facet_wrap(~viral,nrow=2)## Count of articles published by each day
+ggplot(ON, aes(weekday))+
+  geom_bar(aes(fill=Category))
+
+
+count(ON$weekday_is_monday==1)
+count(ON$weekday_is_tuesday==1)
+count(ON$weekday_is_wednesday==1)
+count(ON$weekday_is_thursday==1)
+count(ON$weekday_is_friday==1)
+count(ON$weekday_is_saturday==1)
+count(ON$weekday_is_sunday==1)
+
+ggplot(ON, aes(Category))+
+  geom_bar(aes(fill=Category))+
+  labs(title="# of Articles published per Category",
+       x="",
+       y="Number of Articles")
+  
+count(ON$Category=="Misc")
+count(ON$Category=="Entertainment")
+count(ON$Category=="Social")
+count(ON$Category=="World")
+count(ON$Category=="Lifestyle")
+count(ON$Category=="Business")
+count(ON$Category=="Tech")
+
 
 
 # This graph shows us that for each category, articles published on Saturday have the highest shares. Maybe
@@ -94,35 +124,52 @@ ggplot(ON, aes(x=Category, y=n_tokens_content))+
 
 
 ggplot(ON, aes(x=weekday, y=n_tokens_title))+
-  geom_boxplot(aes(fill=factor(Category))) ## Over the course of the week, the number of letters in a title per category are not very different. This is inconclusive. 
+  geom_boxplot(aes(fill=factor(Category)))+
+  facet_wrap(~viral , nrow=2)## Over the course of the week, the number of letters in a title per category are not very different. This is inconclusive. 
 
-ggplot(ON, aes(x=Category, y=average_token_length))+
+ggplot(ON, aes(x=Category, y=n_tokens_content))+
   geom_boxplot(aes(fill=Category))+
-  facet_wrap(~viral,nrow=2)  ### Not enough variance
+  ylim(0,4000)+
+  facet_wrap(~viral,nrow=2) ## Not Enough Variance
 
 
 ggplot(ON, aes(x=Category))+
   geom_bar(aes(fill=factor(Category)))+ 
   labs(title="Count of articles per category",
-       y="Number of Shares") ## Number of articles per category
-## Violin PLot of Shares per type of Article Category
-ggplot(ON, aes(x=Category, y=num_imgs))+
+       y="Number of Articles") ## Number of articles per category
+
+## Violin Plot of Shares per type of Article Category
+ggplot(ON, aes(x=Category, y=shares))+
   geom_violin(aes(fill=Category))+
-  labs(title="Avg Negative Polarity per Article Category")+
-  ylim(0,10)
+  labs(title="Distribution of shares per Article Category",
+       y="Shares",
+       x="")+
+  ylim(0,6000) ## This tells us that social media tends to have the higher number of shares out of all the categories
   
 ## Bar plot of each category and 
 ggplot(ON, aes(n_tokens_title))+
-  geom_bar(aes(fill=factor(Category)), alpha=0.9) +
+  geom_bar(aes(fill=factor(Category)), alpha=0.4) +
   xlim(0,20)
 ##Density Plot of Category
 ggplot(ON, aes(shares))+
-  geom_density(aes(fill=factor(Category)), alpha=0.5) +
+  geom_density(aes(fill=factor(Category)), alpha=0.7) +
   xlim(0,16000)
 
-
-
 ```
+
+The dataset being used in the analysis describes ~39,640 observations of articles published on Mashable.com's website. In the original dataset there are 37 predictor variables that describe each article. 
+
+To begin building our linear model we decided to plot several box plots and visualizations to find any striking relationships across the data. We transformed the initial dataset by generating dummy variables indicating the specific category of article into a single categorical variable column. We repeated this same transformation to also indicate the day of the week each article was published.  
+
+After performing a simple count statistics, we learned that our dataset contained articles that were published mostly on Thursday and most of the articles had the general category of World, followed by Technology. Given this information, we decided to create a boxplot visualization to explore the relationship between the number of shares across the days of the week for each particular type of category. Across each category, the highest number of shares for each week was on the weekend (Saturday & Sunday). Then, we explored the number of raw shares across each category and found that articles in the dataset that were categorized as Social Media, tended to have higher shares. The next category of article that tended to demonstrate high number of shares was Lifestyle or Tech articles. 
+
+Given the visualizations, we hand built a simple linear model with a mix of different variables. Next, we tested the in and out of sample performance with a predictive success rate of ~49.3%. 
+
+
+
+
+
+Our generalized linear model had a lift of xxxx% from our baseline model created by......
 
 # Testing performance for all linear models w/ shares as outcome variable (lm1, lm2, and lm3)
 ```{r}
@@ -137,232 +184,157 @@ news_train = onlinenews[train_cases,]
 news_test = onlinenews[test_cases,]
 
 ## Fitting linear models on train
-lm1 = lm(shares ~ average_token_length + num_imgs + num_videos + num_hrefs + weekday_is_saturday, data=news_train)
+#lm1 = lm(shares ~ average_token_length + num_imgs + num_videos + num_hrefs + weekday_is_saturday, data=news_train)
 lm2 = lm(shares ~ num_hrefs*num_imgs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
-lm3 = lm(shares ~ n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend, data=news_train)
+#lm3 = lm(shares ~ n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend, data=news_train)
 
-summary(lm1)
+#summary(lm1)
 summary(lm2)
-summary(lm3)
+#summary(lm3)
 #in sample
-phat_train1 = predict(lm1, news_train) 
+#phat_train1 = predict(lm1, news_train) 
 phat_train2 = predict(lm2, news_train) 
-phat_train3 = predict(lm3, news_train) 
+#phat_train3 = predict(lm3, news_train) 
 
-yhat_train1 = ifelse(phat_train1 >= 1400, 1,0)
+#yhat_train1 = ifelse(phat_train1 >= 1400, 1,0)
 yhat_train2 = ifelse(phat_train2 >= 1400, 1,0)
-yhat_train3 = ifelse(phat_train3 >= 1400, 1,0)
+#yhat_train3 = ifelse(phat_train3 >= 1400, 1,0)
 
 
 #in sample performance
-confusion_in1 = table(y = news_train$viral, yhat = yhat_train1)
+#confusion_in1 = table(y = news_train$viral, yhat = yhat_train1)
 confusion_in2 = table(y = news_train$viral, yhat = yhat_train2)
-confusion_in3 = table(y = news_train$viral, yhat = yhat_train3)
+#confusion_in3 = table(y = news_train$viral, yhat = yhat_train3)
 
-confusion_in1
+#confusion_in1
 confusion_in2
-confusion_in3
+#confusion_in3
 
-sum(diag(confusion_in1))/sum(confusion_in1)
+#sum(diag(confusion_in1))/sum(confusion_in1)
 sum(diag(confusion_in2))/sum(confusion_in2)
-sum(diag(confusion_in3))/sum(confusion_in3)
+#sum(diag(confusion_in3))/sum(confusion_in3)
 
 #out of sample
-phat_test1 <- predict(lm1, news_test)
+#phat_test1 <- predict(lm1, news_test)
 phat_test2 <- predict(lm2, news_test)
-phat_test3 <- predict(lm3, news_test)
+#phat_test3 <- predict(lm3, news_test)
 
-yhat_test1 = ifelse(phat_test1 > 1400, 1,0)
+#yhat_test1 = ifelse(phat_test1 > 1400, 1,0)
 yhat_test2 = ifelse(phat_test2 > 1400, 1,0)
-yhat_test3 = ifelse(phat_test3 > 1400, 1,0)
+#yhat_test3 = ifelse(phat_test3 > 1400, 1,0)
 
 #out of sample performance
-confusion_out1 = table(y = news_test$viral, yhat = yhat_test1)
+#confusion_out1 = table(y = news_test$viral, yhat = yhat_test1)
 confusion_out2 = table(y = news_test$viral, yhat = yhat_test2)
-confusion_out3 = table(y = news_test$viral, yhat = yhat_test3)
+#confusion_out3 = table(y = news_test$viral, yhat = yhat_test3)
 
-confusion_out1
+#confusion_out1
 confusion_out2
-confusion_out3
+#confusion_out3
 
-sum(diag(confusion_out1))/sum(confusion_out1)
+#sum(diag(confusion_out1))/sum(confusion_out1)
 sum(diag(confusion_out2))/sum(confusion_out2)
-sum(diag(confusion_out3))/sum(confusion_out3)
+#sum(diag(confusion_out3))/sum(confusion_out3)
 
 ```
 # Testing Performance for best Linear Model (lm2)
 ```{r}
+set.seed(123456)
+library(mosaic)
 
-  
-# Train/Test Splits
-n = nrow(ON)
-n_train = round(0.8*n)  # round to nearest integer
-n_test = n - n_train
-train_cases = sample.int(n, n_train, replace=FALSE)
-test_cases = setdiff(1:n, train_cases)
-news_train = ON[train_cases,]
-news_test = ON[test_cases,]
-
-## Fitting model to training data
-lm2 = lm(shares ~ num_hrefs*num_imgs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
-
-
-#in sample
-
-phat_train2 = predict(lm2, news_train) 
-yhat_train2 = ifelse(phat_train2 >= 1400, 1,0)
-
+IN.lm<- do(100)*{  
+  # Train/Test Splits
+  n = nrow(ON)
+  n_train = round(0.8*n)  # round to nearest integer
+  n_test = n - n_train
+  train_cases = sample.int(n, n_train, replace=FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  news_train = ON[train_cases,]
+  news_test = ON[test_cases,]
+  ## Fitting model to training data
+  lm2 = lm(shares ~ num_hrefs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
+  #in sample
+  phat_train2 = predict(lm2, news_train) 
+  yhat_train2 = ifelse(phat_train2 >= 1400, 1,0)
 #in sample performance
-confusion_in2 = table(y = news_train$viral, yhat = yhat_train2)
-
+  confusion_in2 = table(y = news_train$viral, yhat = yhat_train2)
+  sum(diag(confusion_in2))/sum(confusion_in2)
+}
 confusion_in2
+colMeans(IN.lm)
 
-sum(diag(confusion_in2))/sum(confusion_in2)
 
-#out of sample
-phat_test2 <- predict(lm2, news_test)
-
-yhat_test2 = ifelse(phat_test2 >= 1400,1,0)
-
+OUT.lm <- do(100)*{
+  n = nrow(ON)
+  n_train = round(0.8*n)  # round to nearest integer
+  n_test = n - n_train
+  train_cases = sample.int(n, n_train, replace=FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  news_train = ON[train_cases,]
+  news_test = ON[test_cases,]
+  ## Fitting model to training data
+  lm2 = lm(shares ~ num_hrefs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train)
+  phat_test2 <- predict(lm2, news_test)
+  yhat_test2 = ifelse(phat_test2 >= 1400,1,0)
 #out of sample performance
-confusion_out2 = table(y = news_test$viral, yhat = yhat_test2)
+  confusion_out2 = table(y = news_test$viral, yhat = yhat_test2)
+  sum(diag(confusion_out2))/sum(confusion_out2)
+}
 
 confusion_out2
-
-sum(diag(confusion_out2))/sum(confusion_out2)
-
-
+colMeans(OUT.lm)
 ```
 
 #Generlized Linear Model 
 ```{r}
 
-lm1 = glm(viral ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=onlinenews, family=binomial)
-lm2 = glm(viral ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=onlinenews, family=binomial)
-lm3 = glm(viral ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=onlinenews, family=binomial)
+glm1 = glm(viral ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=ON, family=binomial)
+glm2 = glm(viral ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=ON, family=binomial)
+glm3 = glm(viral ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=ON, family=binomial)
 
-summary(lm1)
-summary(lm2)
-summary(lm3)
-yhat1 <- predict(lm1,onlinenews)
-yhat2 <- predict(lm2,onlinenews)
-yhat3 <- predict(lm3,onlinenews)
-
-
-
-rmse = function(y, yhat) {
-  sqrt( mean( (y - yhat)^2 ) )
-}
-
-
-## TRAIN/TEST + Do Loop for each model on the training data
-rmsevals <- do(100)*{
-  n = nrow(onlinenews)
-  n_train = round(0.7*n)  # round to nearest integer
-  n_test = n - n_train
-  train_cases = sample.int(n, n_train, replace=FALSE)
-  test_cases = setdiff(1:n, train_cases)
-  news_train = onlinenews[train_cases,]
-  news_test = onlinenews[test_cases,]
-	
-# Fit to the training data
-  lm1train = glm(viral ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday , data=news_train, family=binomial)
-  
-  lm2train = glm(viral ~ num_hrefs + is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train, family=binomial)
-  
-  lm3train = glm(viral ~ n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend, data=news_train, family=binomial)
-
-# Predictions out of sample
-  yhat_test1 = predict(lm1train, news_test)
-  yhat_test2 = predict(lm2train, news_test)
-  yhat_test3 = predict(lm3train, news_test)
-
-# Root mean-squared prediction error
-  c(rmse(news_test$viral, yhat_testg1), rmse(news_test$viral, yhat_testg2),rmse(news_test$viral, yhat_testg3))
-}
-
-
-colMeans(rmsevals)
-
+stargazer::stargazer(glm1, glm2, glm3, type="text")
 ```
 
 
 # Question 3 Part II: Classification Model using GLM Binomial 
 ```{r}
-onlinenews <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/online_news.csv")
-onlinenews$viral <- as.numeric(onlinenews$shares >= 1400)
 
-ON <- na.omit(onlinenews)
-
-ON$viral <- as.numeric(ON$shares >= 1400)
-
+IN.glm <- do(100)*{
 ## Train/ Test split for Generalized model 
-n = nrow(onlinenews)
-n_train = round(0.8*n)  # round to nearest integer
-n_test = n - n_train
-train_cases = sample.int(n, n_train, replace=FALSE)
-test_cases = setdiff(1:n, train_cases)
-news_train = onlinenews[train_cases,]
-news_test = onlinenews[test_cases,]
+  n = nrow(ON)
+  n_train = round(0.8*n)  # round to nearest integer
+  n_test = n - n_train
+  train_cases = sample.int(n, n_train, replace=FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  news_train = ON[train_cases,]
+  news_test = ON[test_cases,]
+  glm2 = glm(viral ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train, family='binomial')
+## In-Sample Performance 
+  phat_gtrain2 = predict(glm2, news_train) 
+  yhat_gtrain2 = ifelse(phat_gtrain2>0.5, 1,0)
+  confusion_ing2 = table(y = news_train$viral, yhat = yhat_gtrain2)
+  sum(diag(confusion_ing2))/sum(confusion_ing2)
+}
 
-glm1 = glm(viral ~ average_token_length + num_imgs  + num_videos + num_hrefs + weekday_is_saturday, data=news_train, family='binomial')
-
-glm2 = glm(viral ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train, family='binomial')
-
-glm3 = glm(viral ~ (n_tokens_title + num_hrefs + weekday_is_monday + global_rate_positive_words + avg_negative_polarity + max_negative_polarity + is_weekend), data=news_train, family='binomial')
-
-
-
- 
-stargazer::stargazer(glm1, glm2, glm3, type= "text")
-
-
-## In-Sample Performance
-
-phat_gtrain1 = predict(glm1, news_train) 
-phat_gtrain2 = predict(glm2, news_train) 
-phat_gtrain3 = predict(glm3, news_train) 
-
-yhat_gtrain1 = ifelse(phat_gtrain1>0.5, 1,0)
-yhat_gtrain2 = ifelse(phat_gtrain2>0.5, 1,0)
-yhat_gtrain3 = ifelse(phat_gtrain3>0.5, 1,0)
-
-confusion_ing1 = table(y = news_train$viral, yhat = yhat_gtrain1)
-
-confusion_ing2 = table(y = news_train$viral, yhat = yhat_gtrain2)
-
-confusion_ing3 = table(y = news_train$viral, yhat = yhat_gtrain3)
-
-confusion_ing1
 confusion_ing2
-confusion_ing3
-
-sum(diag(confusion_ing1))/sum(confusion_ing1)
-sum(diag(confusion_ing2))/sum(confusion_ing2)
-sum(diag(confusion_ing3))/sum(confusion_ing3)
+colMeans(IN.glm)
 
 ## Out of sample
+OUT.glm <- do(100)*{
+  n = nrow(ON)
+  n_train = round(0.8*n)  # round to nearest integer
+  n_test = n - n_train
+  train_cases = sample.int(n, n_train, replace=FALSE)
+  test_cases = setdiff(1:n, train_cases)
+  news_train = ON[train_cases,]
+  news_test = ON[test_cases,]
+  glm2 = glm(viral ~ num_hrefs +is_weekend + global_rate_negative_words + data_channel_is_bus + self_reference_avg_sharess + data_channel_is_world + data_channel_is_entertainment + num_keywords + avg_negative_polarity, data=news_train, family='binomial')
+  phat_testg2 = predict(glm2, news_test)
+  yhat_testg2 = ifelse(phat_testg2 > 0.5,1,0)
+  confusion_outg2 = table(y = news_test$viral, yhat = yhat_testg2)
+  sum(diag(confusion_outg2))/sum(confusion_outg2)
+}
 
-phat_testg1 = predict(glm1, news_test)
-phat_testg2 = predict(glm2, news_test)
-phat_testg3 = predict(glm2, news_test)
-
-yhat_testg1 = ifelse(phat_testg1 > 0.5,1,0)
-yhat_testg2 = ifelse(phat_testg2 > 0.5,1,0)
-yhat_testg3 = ifelse(phat_testg3 > 0.5,1,0)
-
-confusion_outg1 = table(y = news_test$viral, yhat = yhat_testg1)
-confusion_outg2 = table(y = news_test$viral, yhat = yhat_testg2)
-confusion_outg3 = table(y = news_test$viral, yhat = yhat_testg3)
-
-confusion_outg1
 confusion_outg2
-confusion_outg3
-
-sum(diag(confusion_outg1))/sum(confusion_outg1)
-sum(diag(confusion_outg2))/sum(confusion_outg2)
-sum(diag(confusion_outg3))/sum(confusion_outg3)
-
-
-
+colMeans(OUT.glm)
 ```
